@@ -3,13 +3,1003 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shape Explorer App</title>
-  <!-- Links to your existing styles -->
-  <link rel="stylesheet" href="styles.css">
-  <!-- Links to the updated script below -->
-  <script src="script.js" defer></script>
+  <title>AI Voice & Vector Animation Studio</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #0c0c10;
+      color: #f0f0f5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: #181820;
+      border-bottom: 1px solid #2d2d3d;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #101016;
+      padding: 3px 6px;
+      border-radius: 5px;
+      border: 1px solid #222230;
+    }
+    .ai-group {
+      background: linear-gradient(135deg, #2a1548 0%, #151d42 100%);
+      border: 1px solid #6366f1;
+    }
+    label { font-size: 9px; color: #a0a0b0; font-weight: bold; text-transform: uppercase; }
+    input[type="color"] { border: none; width: 22px; height: 22px; border-radius: 3px; cursor: pointer; background: none; }
+    input[type="range"] { width: 60px; }
+    input[type="text"] { background: #1a1a26; color: #fff; border: 1px solid #3a3a50; padding: 2px 4px; border-radius: 3px; font-size: 11px; }
+    select { background: #1a1a26; color: #fff; border: 1px solid #3a3a50; padding: 2px 4px; border-radius: 3px; font-size: 11px; max-width: 130px; }
+    
+    button {
+      background: #222230;
+      color: #fff;
+      border: 1px solid #3a3a50;
+      padding: 4px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    button:hover { background: #323246; }
+    button.active { background: #6366f1; border-color: #818cf8; }
+    button.ai-btn { background: #6366f1; border-color: #a5b4fc; font-weight: bold; }
+    button.ai-btn:hover { background: #4f46e5; }
+    button.danger-btn { background: #991b1b; border-color: #f87171; }
+    button.danger-btn:hover { background: #dc2626; }
+    button.recording { background: #ef4444; animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .main-stage {
+      flex: 1;
+      display: flex;
+      background: #050507;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 640px;
+      height: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      touch-action: none;
+    }
+    #bgCanvas { z-index: 1; }
+    #onionCanvas { z-index: 2; opacity: 0.35; pointer-events: none; }
+    #drawCanvas { z-index: 3; }
+
+    /* AI Assistant Sidebar Panel */
+    .ai-chat-panel {
+      width: 260px;
+      background: #12121a;
+      border-left: 1px solid #2d2d3d;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      padding: 8px 10px;
+      background: #181824;
+      border-bottom: 1px solid #2d2d3d;
+      font-size: 11px;
+      font-weight: bold;
+      color: #a5b4fc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .msg {
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      max-width: 90%;
+      line-height: 1.3;
+    }
+    .msg.bot { background: #222234; color: #d1d5db; align-self: flex-start; border-left: 3px solid #6366f1; }
+    .msg.user { background: #4338ca; color: #fff; align-self: flex-end; }
+    .chat-input-area {
+      padding: 8px;
+      background: #181824;
+      border-top: 1px solid #2d2d3d;
+      display: flex;
+      gap: 4px;
+    }
+    .chat-input-area input { flex: 1; width: 100%; text-align: left; }
+
+    .timeline-bar {
+      height: 105px;
+      background: #181820;
+      border-top: 1px solid #2d2d3d;
+      display: flex;
+      flex-direction: column;
+      padding: 6px 10px;
+      gap: 4px;
+      z-index: 10;
+    }
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .frames-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      flex: 1;
+      align-items: center;
+    }
+    .frame-card {
+      min-width: 50px;
+      height: 36px;
+      background: #101016;
+      border: 2px solid #2d2d3d;
+      border-radius: 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 10px;
+      cursor: pointer;
+      color: #808095;
+      font-weight: bold;
+    }
+    .frame-card.active {
+      border-color: #6366f1;
+      color: #fff;
+      background: #252538;
+    }
+  </style>
 </head>
 <body>
-  <!-- The JavaScript will inject the app structure here -->
+
+  <div class="toolbar">
+    <!-- Tools & Modes -->
+    <div class="tool-group">
+      <label>Mode</label>
+      <button id="btnBrush" class="active">🖌️ Brush</button>
+      <button id="btnSelect">✋ Move/Select</button>
+      <button id="btnDeleteObj" class="danger-btn">🗑 Delete</button>
+    </div>
+
+    <!-- Shapes & 80+ Emoji Stickers -->
+    <div class="tool-group">
+      <label>Shapes & 80+ Stickers</label>
+      <button id="btnAddRect">Rect</button>
+      <button id="btnAddCircle">Circle</button>
+      <button id="btnAddStar">Star</button>
+      <select id="emojiPicker">
+        <optgroup label="🚀 Space & Sci-Fi">
+          <option value="🚀">🚀 Rocket</option><option value="🛸">🛸 UFO</option><option value="👾">👾 Alien</option>
+          <option value="🤖">🤖 Robot</option><option value="🪐">🪐 Planet</option><option value="🛰️">🛰️ Satellite</option>
+          <option value="🌌">🌌 Galaxy</option><option value="💻">💻 Tech</option><option value="⚡">⚡ Laser</option>
+        </optgroup>
+        <optgroup label="🐱 Animals & Monsters">
+          <option value="🐱">🐱 Cat</option><option value="🐶">🐶 Dog</option><option value="🦊">🦊 Fox</option>
+          <option value="🦁">🦁 Lion</option><option value="🐯">🐯 Tiger</option><option value="🐼">🐼 Panda</option>
+          <option value="🦄">🦄 Unicorn</option><option value="🐉">🐉 Dragon</option><option value="🐸">🐸 Frog</option>
+          <option value="🐵">🐵 Monkey</option><option value="🦉">🦉 Owl</option><option value="🦅">🦅 Eagle</option>
+          <option value="🦈">🦈 Shark</option><option value="🐙">🐙 Octopus</option><option value="🦋">🦋 Butterfly</option>
+          <option value="👻">👻 Ghost</option><option value="🧙‍♂️">🧙‍♂️ Wizard</option><option value="🔮">🔮 Crystal</option>
+        </optgroup>
+        <optgroup label="🔥 Elements & Weather">
+          <option value="🔥">🔥 Fire</option><option value="🌈">🌈 Rainbow</option><option value="❄️">❄️ Snow</option>
+          <option value="☀️">☀️ Sun</option><option value="🌙">🌙 Moon</option><option value="🌧️">🌧️ Rain</option>
+          <option value="🌊">🌊 Wave</option><option value="🌋">🌋 Volcano</option><option value="💥">💥 Boom</option>
+        </optgroup>
+        <optgroup label="🍕 Food & Drinks">
+          <option value="🍕">🍕 Pizza</option><option value="🍔">🍔 Burger</option><option value="🍟">🍟 Fries</option>
+          <option value="🍦">🍦 Ice Cream</option><option value="🍿">🍿 Popcorn</option><option value="🍩">🍩 Donut</option>
+          <option value="🍎">🍎 Apple</option><option value="🍓">🍓 Strawberry</option><option value="☕">☕ Coffee</option>
+          <option value="🧋">🧋 Boba</option>
+        </optgroup>
+        <optgroup label="⚽ Sports & Fun">
+          <option value="⚽">⚽ Soccer</option><option value="🏀">🏀 Basketball</option><option value="🎯">🎯 Target</option>
+          <option value="🎨">🎨 Art</option><option value="🎸">🎸 Guitar</option><option value="🎮">🎮 Game</option>
+          <option value="🏆">🏆 Trophy</option><option value="🛹">🛹 Skateboard</option><option value="💣">💣 Bomb</option>
+        </optgroup>
+        <optgroup label="🚗 Vehicles">
+          <option value="🚗">🚗 Car</option><option value="🏎️">🏎️ Racecar</option><option value="✈️">✈️ Airplane</option>
+          <option value="🚁">🚁 Helicopter</option><option value="⛵">⛵ Boat</option><option value="🚲">🚲 Bike</option>
+        </optgroup>
+        <optgroup label="💖 Icons & Symbols">
+          <option value="💖">💖 Heart</option><option value="⭐">⭐ Star</option><option value="💎">💎 Diamond</option>
+          <option value="🎉">🎉 Party</option><option value="👑">👑 Crown</option><option value="🎁">🎁 Gift</option>
+          <option value="🔑">🔑 Key</option><option value="💡">💡 Idea</option><option value="🍀">🍀 Luck</option>
+          <option value="🛡️">🛡️ Shield</option><option value="⚔️">⚔️ Swords</option><option value="⚓">⚓ Anchor</option>
+        </optgroup>
+      </select>
+      <button id="btnAddEmoji">+ Sticker</button>
+    </div>
+
+    <!-- AI Background Templates -->
+    <div class="tool-group">
+      <label>AI Background</label>
+      <select id="bgPreset">
+        <option value="none">Blank Canvas</option>
+        <option value="space">🌌 AI Space</option>
+        <option value="sunset">🌅 AI Sunset</option>
+        <option value="ocean">🌊 AI Ocean</option>
+        <option value="cyber">🌆 Cyberpunk Grid</option>
+        <option value="forest">🌲 AI Forest</option>
+        <option value="desert">🏜️ AI Desert</option>
+        <option value="night">🌙 Night Sky</option>
+      </select>
+    </div>
+
+    <!-- Formatting & Controls -->
+    <div class="tool-group">
+      <label>Color</label>
+      <input type="color" id="colorPicker" value="#000000">
+    </div>
+
+    <div class="tool-group">
+      <label>Size (<span id="sizeVal">8</span>px)</label>
+      <input type="range" id="sizeRange" min="2" max="150" value="8">
+    </div>
+
+    <div class="tool-group">
+      <button id="btnOnion" class="active">Onion Skin</button>
+      <button id="btnClear">Clear Frame</button>
+    </div>
+
+    <!-- 195M+ Generator -->
+    <div class="tool-group ai-group">
+      <label style="color:#c7d2fe;">✨ 195M Engine</label>
+      <input type="text" id="aiSeed" value="100" style="width:30px;">
+      <button id="btnAiGenerate" class="ai-btn">Gen</button>
+    </div>
+  </div>
+
+  <div class="main-stage">
+    <!-- Canvas Area -->
+    <div class="workspace">
+      <div class="canvas-container">
+        <canvas id="bgCanvas" width="640" height="400"></canvas>
+        <canvas id="onionCanvas" width="640" height="400"></canvas>
+        <canvas id="drawCanvas" width="640" height="400"></canvas>
+      </div>
+    </div>
+
+    <!-- AI Assistant Panel (Adds objects & backgrounds via Chat) -->
+    <div class="ai-chat-panel">
+      <div class="chat-header">
+        <span>🤖 AI Assistant (Backgrounds & Objects)</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg bot">Hi! I am your AI animation assistant. Ask me to set backgrounds or add stickers & objects! (e.g. "Set background to space", "Add a dragon sticker", "Add a red star")</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Command AI assistant...">
+        <button id="btnSendChat" class="ai-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline-bar">
+    <div class="playback-controls">
+      <button id="btnPlay" style="background:#10b981; font-weight:bold;">▶ Play</button>
+      <button id="btnAddFrame">+ Frame</button>
+      <button id="btnDupFrame" style="background:#3b82f6;">📋 Duplicate</button>
+      <button id="btnDeleteFrame">🗑 Delete Frame</button>
+
+      <!-- Voice Sync Recorder -->
+      <div class="tool-group" style="margin-left: 8px;">
+        <label>Voice Audio</label>
+        <button id="btnRecordVoice">🎙️ Record Voice</button>
+        <button id="btnPlayVoice" style="display:none;">🔊 Play Voice</button>
+      </div>
+
+      <div class="tool-group">
+        <label>Speed (<span id="fpsVal">12</span> FPS)</label>
+        <input type="range" id="fpsRange" min="1" max="60" value="12">
+      </div>
+
+      <span id="frameCounter" style="font-size: 11px; color: #a0a0b0; font-weight:bold; margin-left:auto;">Frame 1 / 1</span>
+    </div>
+
+    <div class="frames-strip" id="framesStrip"></div>
+  </div>
+
+  <script>
+    const width = 640;
+    const height = 400;
+
+    const drawCanvas = document.getElementById('drawCanvas');
+    const drawCtx = drawCanvas.getContext('2d');
+    const onionCanvas = document.getElementById('onionCanvas');
+    const onionCtx = onionCanvas.getContext('2d');
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+
+    const colorPicker = document.getElementById('colorPicker');
+    const sizeRange = document.getElementById('sizeRange');
+    const sizeVal = document.getElementById('sizeVal');
+    const btnBrush = document.getElementById('btnBrush');
+    const btnSelect = document.getElementById('btnSelect');
+    const btnDeleteObj = document.getElementById('btnDeleteObj');
+    const btnAddRect = document.getElementById('btnAddRect');
+    const btnAddCircle = document.getElementById('btnAddCircle');
+    const btnAddStar = document.getElementById('btnAddStar');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const btnAddEmoji = document.getElementById('btnAddEmoji');
+    const bgPreset = document.getElementById('bgPreset');
+    const btnOnion = document.getElementById('btnOnion');
+    const btnClear = document.getElementById('btnClear');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnAddFrame = document.getElementById('btnAddFrame');
+    const btnDupFrame = document.getElementById('btnDupFrame');
+    const btnDeleteFrame = document.getElementById('btnDeleteFrame');
+    const fpsRange = document.getElementById('fpsRange');
+    const fpsVal = document.getElementById('fpsVal');
+    const framesStrip = document.getElementById('framesStrip');
+    const frameCounter = document.getElementById('frameCounter');
+    const aiSeed = document.getElementById('aiSeed');
+    const btnAiGenerate = document.getElementById('btnAiGenerate');
+
+    // Chat AI controls
+    const chatInput = document.getElementById('chatInput');
+    const btnSendChat = document.getElementById('btnSendChat');
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Voice recorder controls
+    const btnRecordVoice = document.getElementById('btnRecordVoice');
+    const btnPlayVoice = document.getElementById('btnPlayVoice');
+
+    let frames = [ [] ];
+    let backgroundTheme = 'none';
+    let currentFrame = 0;
+    let mode = 'brush';
+    let selectedObjectIndex = -1;
+    let isDrawingOrDragging = false;
+    let currentPath = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    let onionSkinEnabled = true;
+    let isPlaying = false;
+    let playInterval = null;
+    let fps = 12;
+
+    // Voice Recording state
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedAudioBlob = null;
+    let recordedAudioUrl = null;
+    let audioElement = new Audio();
+    let isRecording = false;
+
+    function init() {
+      render();
+      updateUI();
+
+      drawCanvas.addEventListener('mousedown', handleMouseDown);
+      drawCanvas.addEventListener('mousemove', handleMouseMove);
+      drawCanvas.addEventListener('mouseup', handleMouseUp);
+
+      drawCanvas.addEventListener('touchstart', (e) => handleMouseDown(e.touches[0]));
+      drawCanvas.addEventListener('touchmove', (e) => handleMouseMove(e.touches[0]));
+      drawCanvas.addEventListener('touchend', handleMouseUp);
+    }
+
+    function render() {
+      renderBackground();
+      drawCtx.clearRect(0, 0, width, height);
+      const objects = frames[currentFrame];
+
+      objects.forEach((obj, idx) => {
+        drawObject(drawCtx, obj);
+        if (idx === selectedObjectIndex && !isPlaying) {
+          drawBoundingBox(drawCtx, obj);
+        }
+      });
+
+      if (currentPath) {
+        drawObject(drawCtx, currentPath);
+      }
+
+      renderOnionSkin();
+    }
+
+    function renderBackground() {
+      bgCtx.clearRect(0, 0, width, height);
+      if (backgroundTheme === 'none') {
+        bgCtx.fillStyle = '#ffffff';
+        bgCtx.fillRect(0, 0, width, height);
+      } else if (backgroundTheme === 'space') {
+        let grad = bgCtx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, '#050515'); grad.addColorStop(1, '#1a0b2e');
+        bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, width, height);
+        bgCtx.fillStyle = '#ffffff';
+        for (let i = 0; i < 60; i++) {
+          bgCtx.fillRect((i * 37) % width, (i * 19) % height, (i % 3) + 1, (i % 3) + 1);
+        }
+      } else if (backgroundTheme === 'sunset') {
+        let grad = bgCtx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, '#fd3a69'); grad.addColorStop(0.6, '#fecd1a'); grad.addColorStop(1, '#2e1065');
+        bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, width, height);
+        bgCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        bgCtx.beginPath(); bgCtx.arc(320, 260, 80, 0, Math.PI * 2); bgCtx.fill();
+      } else if (backgroundTheme === 'ocean') {
+        let grad = bgCtx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, '#0284c7'); grad.addColorStop(1, '#0369a1');
+        bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, width, height);
+        bgCtx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        for (let i = 0; i < 5; i++) {
+          bgCtx.beginPath(); bgCtx.arc(i * 150 + 50, 360, 100, 0, Math.PI * 2); bgCtx.fill();
+        }
+      } else if (backgroundTheme === 'cyber') {
+        bgCtx.fillStyle = '#09090e'; bgCtx.fillRect(0, 0, width, height);
+        bgCtx.strokeStyle = '#ec4899'; bgCtx.lineWidth = 1;
+        for (let x = 0; x < width; x += 40) {
+          bgCtx.beginPath(); bgCtx.moveTo(x, 0); bgCtx.lineTo(x, height); bgCtx.stroke();
+        }
+        for (let y = 0; y < height; y += 40) {
+          bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(width, y); bgCtx.stroke();
+        }
+      } else if (backgroundTheme === 'forest') {
+        let grad = bgCtx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, '#064e3b'); grad.addColorStop(1, '#022c22');
+        bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, width, height);
+        bgCtx.fillStyle = '#065f46';
+        for (let i = 0; i < 10; i++) {
+          bgCtx.beginPath();
+          bgCtx.moveTo(i * 70, height); bgCtx.lineTo(i * 70 + 35, 200); bgCtx.lineTo(i * 70 + 70, height);
+          bgCtx.fill();
+        }
+      } else if (backgroundTheme === 'desert') {
+        let grad = bgCtx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, '#ffedd5'); grad.addColorStop(1, '#f97316');
+        bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, width, height);
+      } else if (backgroundTheme === 'night') {
+        bgCtx.fillStyle = '#020617'; bgCtx.fillRect(0, 0, width, height);
+        bgCtx.fillStyle = '#e2e8f0';
+        bgCtx.beginPath(); bgCtx.arc(520, 80, 40, 0, Math.PI * 2); bgCtx.fill();
+      }
+    }
+
+    function renderOnionSkin() {
+      onionCtx.clearRect(0, 0, width, height);
+      if (onionSkinEnabled && currentFrame > 0 && !isPlaying) {
+        const prevObjects = frames[currentFrame - 1];
+        prevObjects.forEach(obj => drawObject(onionCtx, obj));
+      }
+    }
+
+    function drawObject(ctx, obj) {
+      ctx.save();
+      ctx.fillStyle = obj.color;
+      ctx.strokeStyle = obj.color;
+      ctx.lineWidth = obj.size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (obj.type === 'path') {
+        if (obj.points.length > 0) {
+          ctx.beginPath();
+          ctx.moveTo(obj.points[0].x, obj.points[0].y);
+          for (let i = 1; i < obj.points.length; i++) {
+            ctx.lineTo(obj.points[i].x, obj.points[i].y);
+          }
+          ctx.stroke();
+        }
+      } else if (obj.type === 'rect') {
+        ctx.fillRect(obj.x - obj.size/2, obj.y - obj.size/2, obj.size, obj.size);
+      } else if (obj.type === 'circle') {
+        ctx.beginPath();
+        ctx.arc(obj.x, obj.y, obj.size/2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obj.type === 'star') {
+        ctx.beginPath();
+        drawStarPoints(ctx, obj.x, obj.y, 5, obj.size/2, obj.size/4);
+        ctx.fill();
+      } else if (obj.type === 'emoji') {
+        ctx.font = `${obj.size}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(obj.value, obj.x, obj.y);
+      }
+      ctx.restore();
+    }
+
+    function drawBoundingBox(ctx, obj) {
+      ctx.save();
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      const b = getObjectBounds(obj);
+      ctx.strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
+      ctx.restore();
+    }
+
+    function getObjectBounds(obj) {
+      if (obj.type === 'path') {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        obj.points.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+        const padding = obj.size / 2;
+        return { x: minX - padding, y: minY - padding, w: (maxX - minX) + obj.size, h: (maxY - minY) + obj.size };
+      } else {
+        return { x: obj.x - obj.size/2, y: obj.y - obj.size/2, w: obj.size, h: obj.size };
+      }
+    }
+
+    function drawStarPoints(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+      let rot = Math.PI / 2 * 3;
+      let step = Math.PI / spikes;
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerRadius, cy + Math.sin(rot) * outerRadius);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerRadius, cy + Math.sin(rot) * innerRadius);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+    }
+
+    // Pointer Handling
+    function handleMouseDown(e) {
+      if (isPlaying) return;
+      const { x, y } = getCanvasCoords(e);
+      isDrawingOrDragging = true;
+
+      if (mode === 'brush') {
+        selectedObjectIndex = -1;
+        currentPath = {
+          type: 'path',
+          points: [{ x, y }],
+          color: colorPicker.value,
+          size: parseInt(sizeRange.value)
+        };
+      } else if (mode === 'select') {
+        const objects = frames[currentFrame];
+        selectedObjectIndex = -1;
+
+        for (let i = objects.length - 1; i >= 0; i--) {
+          const b = getObjectBounds(objects[i]);
+          if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+            selectedObjectIndex = i;
+            const obj = objects[i];
+            dragOffsetX = x - (obj.x || (b.x + b.w/2));
+            dragOffsetY = y - (obj.y || (b.y + b.h/2));
+            colorPicker.value = obj.color || '#000000';
+            sizeRange.value = obj.size;
+            sizeVal.textContent = obj.size;
+            break;
+          }
+        }
+      }
+      render();
+    }
+
+    function handleMouseMove(e) {
+      if (!isDrawingOrDragging || isPlaying) return;
+      const { x, y } = getCanvasCoords(e);
+
+      if (mode === 'brush' && currentPath) {
+        currentPath.points.push({ x, y });
+      } else if (mode === 'select' && selectedObjectIndex !== -1) {
+        const obj = frames[currentFrame][selectedObjectIndex];
+        if (obj.type === 'path') {
+          const b = getObjectBounds(obj);
+          const currentCenterX = b.x + b.w/2;
+          const currentCenterY = b.y + b.h/2;
+          const dx = (x - dragOffsetX) - currentCenterX;
+          const dy = (y - dragOffsetY) - currentCenterY;
+          obj.points.forEach(p => { p.x += dx; p.y += dy; });
+        } else {
+          obj.x = x - dragOffsetX;
+          obj.y = y - dragOffsetY;
+        }
+      }
+      render();
+    }
+
+    function handleMouseUp() {
+      if (!isDrawingOrDragging) return;
+      isDrawingOrDragging = false;
+
+      if (mode === 'brush' && currentPath) {
+        if (currentPath.points.length > 0) {
+          frames[currentFrame].push(currentPath);
+        }
+        currentPath = null;
+      }
+      render();
+    }
+
+    function getCanvasCoords(e) {
+      const rect = drawCanvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (width / rect.width),
+        y: (e.clientY - rect.top) * (height / rect.height)
+      };
+    }
+
+    function addObject(type, value = '') {
+      const newObj = {
+        type: type,
+        value: value,
+        x: width / 2,
+        y: height / 2,
+        size: parseInt(sizeRange.value) < 15 ? 40 : parseInt(sizeRange.value),
+        color: colorPicker.value
+      };
+      frames[currentFrame].push(newObj);
+      setMode('select');
+      selectedObjectIndex = frames[currentFrame].length - 1;
+      render();
+    }
+
+    function deleteSelectedObject() {
+      if (selectedObjectIndex !== -1) {
+        frames[currentFrame].splice(selectedObjectIndex, 1);
+        selectedObjectIndex = -1;
+        render();
+      }
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      btnBrush.classList.toggle('active', mode === 'brush');
+      btnSelect.classList.toggle('active', mode === 'select');
+      if (mode === 'brush') selectedObjectIndex = -1;
+      render();
+    }
+
+    // AI Chat Assistant Engine (Handles backgrounds & object additions)
+    function processAiChatMessage(text) {
+      const lower = text.toLowerCase();
+      addChatMessage('user', text);
+
+      let response = "";
+
+      // Background commands
+      if (lower.includes('background') || lower.includes('bg') || lower.includes('theme')) {
+        if (lower.includes('space') || lower.includes('galaxy')) {
+          backgroundTheme = 'space'; response = "🌌 Background set to Space!";
+        } else if (lower.includes('sunset')) {
+          backgroundTheme = 'sunset'; response = "🌅 Background set to Sunset!";
+        } else if (lower.includes('ocean') || lower.includes('water')) {
+          backgroundTheme = 'ocean'; response = "🌊 Background set to Ocean!";
+        } else if (lower.includes('cyber') || lower.includes('grid')) {
+          backgroundTheme = 'cyber'; response = "🌆 Background set to Cyberpunk Grid!";
+        } else if (lower.includes('forest') || lower.includes('tree')) {
+          backgroundTheme = 'forest'; response = "🌲 Background set to Forest!";
+        } else if (lower.includes('desert')) {
+          backgroundTheme = 'desert'; response = "🏜️ Background set to Desert!";
+        } else if (lower.includes('night') || lower.includes('moon')) {
+          backgroundTheme = 'night'; response = "🌙 Background set to Night Sky!";
+        } else if (lower.includes('clear') || lower.includes('blank') || lower.includes('white')) {
+          backgroundTheme = 'none'; response = "Canvas background cleared!";
+        } else {
+          backgroundTheme = 'space'; response = "Background updated!";
+        }
+        bgPreset.value = backgroundTheme;
+      }
+      // Sticker / Object Commands
+      else {
+        let addedObj = false;
+        const stickerOptions = Array.from(emojiPicker.options);
+
+        for (let opt of stickerOptions) {
+          const val = opt.value;
+          const label = opt.text.toLowerCase();
+          if (lower.includes(label.split(' ')[1] || label) || lower.includes(val)) {
+            addObject('emoji', val);
+            response = `Added ${val} sticker to frame!`;
+            addedObj = true;
+            break;
+          }
+        }
+
+        if (!addedObj) {
+          if (lower.includes('rect') || lower.includes('square')) {
+            addObject('rect'); response = "Added Rectangle shape!";
+          } else if (lower.includes('circle') || lower.includes('ball')) {
+            addObject('circle'); response = "Added Circle shape!";
+          } else if (lower.includes('star')) {
+            addObject('star'); response = "Added Star shape!";
+          } else {
+            // Default intelligent fallback: add a fun emoji requested or guide user
+            response = "I can add backgrounds (Space, Sunset, Ocean, Cyber, Forest, Desert, Night) or 80+ stickers (Rocket, Dragon, Cat, Fire, Robot, Pizza). Try 'Add a rocket sticker' or 'Set background to sunset'!";
+          }
+        }
+      }
+
+      setTimeout(() => addChatMessage('bot', response), 300);
+      render();
+    }
+
+    function addChatMessage(sender, msg) {
+      const el = document.createElement('div');
+      el.className = `msg ${sender}`;
+      el.textContent = msg;
+      chatMessages.appendChild(el);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Voice Recorder Module
+    btnRecordVoice.onclick = async () => {
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+          mediaRecorder.onstop = () => {
+            recordedAudioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+            recordedAudioUrl = URL.createObjectURL(recordedAudioBlob);
+            audioElement.src = recordedAudioUrl;
+            btnPlayVoice.style.display = 'inline-block';
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          btnRecordVoice.textContent = "⏹️ Stop Recording";
+          btnRecordVoice.classList.add('recording');
+        } catch (err) {
+          alert("Microphone access is required to record voice.");
+        }
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        btnRecordVoice.textContent = "🎙️ Record Voice";
+        btnRecordVoice.classList.remove('recording');
+      }
+    };
+
+    btnPlayVoice.onclick = () => {
+      if (recordedAudioUrl) {
+        audioElement.currentTime = 0;
+        audioElement.play();
+      }
+    };
+
+    // Frame & Controls System
+    function addFrame(duplicate = false) {
+      let newFrameObjects = [];
+      if (duplicate) {
+        newFrameObjects = JSON.parse(JSON.stringify(frames[currentFrame]));
+      }
+      currentFrame++;
+      frames.splice(currentFrame, 0, newFrameObjects);
+      selectedObjectIndex = -1;
+      render();
+      updateUI();
+    }
+
+    function deleteFrame() {
+      if (frames.length <= 1) {
+        frames[0] = [];
+        selectedObjectIndex = -1;
+        render();
+        return;
+      }
+      frames.splice(currentFrame, 1);
+      if (currentFrame >= frames.length) currentFrame = frames.length - 1;
+      selectedObjectIndex = -1;
+      render();
+      updateUI();
+    }
+
+    // 195M Generator
+    function generate195MAiAnimation(seedVal) {
+      if (isPlaying) togglePlay();
+      frames = [];
+      const totalFrames = 16;
+      const emojis = ["🚀", "⭐", "🔥", "🤖", "⚽", "👾", "❤️", "🐱", "🛸", "🦄", "🐉", "🍕"];
+      const shapes = ["rect", "circle", "star", "emoji"];
+      const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+
+      let seed = parseInt(seedVal) || 100;
+      function random() {
+        let x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+      }
+
+      const objCount = 2 + Math.floor(random() * 4);
+      const archetypes = [];
+
+      for (let o = 0; o < objCount; o++) {
+        archetypes.push({
+          type: shapes[Math.floor(random() * shapes.length)],
+          emoji: emojis[Math.floor(random() * emojis.length)],
+          color: colors[Math.floor(random() * colors.length)],
+          baseSize: 25 + Math.floor(random() * 40),
+          startX: 100 + Math.floor(random() * 440),
+          startY: 80 + Math.floor(random() * 240),
+          orbitR: 20 + Math.floor(random() * 80),
+          speed: 1 + Math.floor(random() * 3)
+        });
+      }
+
+      for (let f = 0; f < totalFrames; f++) {
+        const frameObjs = [];
+        const progress = f / totalFrames;
+        const angle = progress * Math.PI * 2;
+
+        archetypes.forEach(arch => {
+          const x = arch.startX + Math.cos(angle * arch.speed) * arch.orbitR;
+          const y = arch.startY + Math.sin(angle * arch.speed) * arch.orbitR;
+          const pulseSize = arch.baseSize + Math.sin(angle * 2) * 10;
+
+          frameObjs.push({
+            type: arch.type,
+            value: arch.emoji,
+            x: x,
+            y: y,
+            size: pulseSize,
+            color: arch.color
+          });
+        });
+
+        frames.push(frameObjs);
+      }
+
+      currentFrame = 0;
+      selectedObjectIndex = -1;
+      render();
+      updateUI();
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      btnPlay.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+      btnPlay.style.background = isPlaying ? '#ef4444' : '#10b981';
+
+      if (isPlaying) {
+        selectedObjectIndex = -1;
+        onionCanvas.style.display = 'none';
+
+        if (recordedAudioUrl) {
+          audioElement.currentTime = 0;
+          audioElement.play();
+        }
+
+        playInterval = setInterval(() => {
+          currentFrame = (currentFrame + 1) % frames.length;
+          render();
+          updateUI(false);
+        }, 1000 / fps);
+      } else {
+        clearInterval(playInterval);
+        if (recordedAudioUrl) audioElement.pause();
+        onionCanvas.style.display = 'block';
+        render();
+      }
+    }
+
+    function updateUI(rebuildStrip = true) {
+      frameCounter.textContent = `Frame ${currentFrame + 1} / ${frames.length}`;
+      
+      if (rebuildStrip) {
+        framesStrip.innerHTML = '';
+        frames.forEach((_, idx) => {
+          const card = document.createElement('div');
+          card.className = `frame-card ${idx === currentFrame ? 'active' : ''}`;
+          card.textContent = `#${idx + 1}`;
+          card.onclick = () => {
+            if (isPlaying) togglePlay();
+            currentFrame = idx;
+            selectedObjectIndex = -1;
+            render();
+            updateUI();
+          };
+          framesStrip.appendChild(card);
+        });
+      } else {
+        document.querySelectorAll('.frame-card').forEach((card, idx) => {
+          card.classList.toggle('active', idx === currentFrame);
+        });
+      }
+    }
+
+    // Events
+    btnBrush.onclick = () => setMode('brush');
+    btnSelect.onclick = () => setMode('select');
+    btnAddRect.onclick = () => addObject('rect');
+    btnAddCircle.onclick = () => addObject('circle');
+    btnAddStar.onclick = () => addObject('star');
+    btnAddEmoji.onclick = () => addObject('emoji', emojiPicker.value);
+    btnDeleteObj.onclick = deleteSelectedObject;
+    bgPreset.onchange = () => { backgroundTheme = bgPreset.value; render(); };
+
+    btnSendChat.onclick = () => {
+      if (chatInput.value.trim()) {
+        processAiChatMessage(chatInput.value.trim());
+        chatInput.value = '';
+      }
+    };
+    chatInput.onkeydown = (e) => { if (e.key === 'Enter') btnSendChat.click(); };
+
+    sizeRange.oninput = () => {
+      sizeVal.textContent = sizeRange.value;
+      if (selectedObjectIndex !== -1) {
+        frames[currentFrame][selectedObjectIndex].size = parseInt(sizeRange.value);
+        render();
+      }
+    };
+
+    colorPicker.onchange = () => {
+      if (selectedObjectIndex !== -1) {
+        frames[currentFrame][selectedObjectIndex].color = colorPicker.value;
+        render();
+      }
+    };
+
+    fpsRange.oninput = () => {
+      fps = fpsRange.value;
+      fpsVal.textContent = fps;
+      if (isPlaying) { togglePlay(); togglePlay(); }
+    };
+
+    btnOnion.onclick = () => {
+      onionSkinEnabled = !onionSkinEnabled;
+      btnOnion.classList.toggle('active', onionSkinEnabled);
+      renderOnionSkin();
+    };
+
+    btnClear.onclick = () => {
+      frames[currentFrame] = [];
+      selectedObjectIndex = -1;
+      render();
+    };
+
+    btnAddFrame.onclick = () => { if (!isPlaying) addFrame(false); };
+    btnDupFrame.onclick = () => { if (!isPlaying) addFrame(true); };
+    btnDeleteFrame.onclick = () => { if (!isPlaying) deleteFrame(); };
+    btnPlay.onclick = togglePlay;
+
+    btnAiGenerate.onclick = () => {
+      generate195MAiAnimation(aiSeed.value);
+    };
+
+    init();
+  </script>
 </body>
 </html>
