@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   header.className = 'hero-text';
   header.innerHTML = `
     <h1>Shape Explorer App</h1>
-    <p>Click any shape to select it, use the keyboard shortcuts, or click <strong>Edit</strong> to rename a shape.</p>
+    <p>Click any shape to select it, then use the keyboard shortcuts below:</p>
   `;
 
   const shortcutBar = document.createElement('div');
@@ -45,48 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
     card.dataset.class = shapeData.class;
     card.dataset.desc = shapeData.desc;
 
-    // We add outline:none to the label so it looks clean when editing
     card.innerHTML = `
       <div class="shape ${shapeData.class}"></div>
-      <div class="shape-label" style="outline: none; padding: 2px;">${shapeData.name}</div>
+      <div class="shape-label">${shapeData.name}</div>
       <div class="shape-desc">${shapeData.desc}</div>
     `;
 
-    // Inline styling for the Edit button so it works without needing new CSS
-    const editBtn = document.createElement('button');
-    editBtn.textContent = 'Edit';
-    editBtn.style.marginTop = '1rem';
-    editBtn.style.padding = '0.3rem 0.8rem';
-    editBtn.style.cursor = 'pointer';
-    editBtn.style.background = 'transparent';
-    editBtn.style.color = 'inherit';
-    editBtn.style.border = '1px solid currentColor';
-    editBtn.style.borderRadius = '4px';
-    editBtn.style.opacity = '0.7';
-
-    const label = card.querySelector('.shape-label');
-
-    // Edit Button Logic
-    editBtn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevents the card from selecting/deselecting when editing
-      if (label.isContentEditable) {
-        // Save the text
-        label.contentEditable = "false";
-        editBtn.textContent = 'Edit';
-        card.dataset.name = label.innerText;
-        label.style.borderBottom = "none";
-      } else {
-        // Enable editing
-        label.contentEditable = "true";
-        editBtn.textContent = 'Save';
-        label.style.borderBottom = "1px dashed currentColor";
-        label.focus();
-      }
-    });
-
-    card.appendChild(editBtn);
-
-    // Card Selection Logic
     card.addEventListener('click', (e) => {
       e.stopPropagation();
       if (selectedCard) selectedCard.classList.remove('selected');
@@ -154,11 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Keyboard Shortcuts Listener
   document.addEventListener('keydown', (e) => {
-    // IMPORTANT: Ignore shortcuts if the user is currently typing in an Edit field!
-    if (
-      ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || 
-      document.activeElement.isContentEditable
-    ) return;
+    // Ignore input fields if present
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
     const key = e.key.toLowerCase();
 
@@ -178,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initialize App
+  // Initialize
   document.body.appendChild(header);
   document.body.appendChild(shortcutBar);
   document.body.appendChild(grid);
