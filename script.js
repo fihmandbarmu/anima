@@ -1,158 +1,147 @@
-/**
- * Application State Manager
- */
-class AppState {
-  constructor() {
-    this.items = JSON.parse(localStorage.getItem('app_items')) || [];
-    this.theme = localStorage.getItem('app_theme') || 'light';
-    this.listeners = [];
-  }
-
-  subscribe(listener) {
-    this.listeners.push(listener);
-  }
-
-  notify() {
-    this.listeners.forEach((listener) => listener(this));
-    localStorage.setItem('app_items', JSON.stringify(this.items));
-    localStorage.setItem('app_theme', this.theme);
-  }
-
-  addItem(text) {
-    if (!text.trim()) return false;
-    const newItem = {
-      id: Date.now(),
-      text: text.trim(),
-      completed: false,
-    };
-    this.items.push(newItem);
-    this.notify();
-    return true;
-  }
-
-  toggleItem(id) {
-    this.items = this.items.map((item) =>
-      item.id === id ? { ...item, completed: !item.completed } : item
-    );
-    this.notify();
-  }
-
-  removeItem(id) {
-    this.items = this.items.filter((item) => item.id !== id);
-    this.notify();
-  }
-
-  toggleTheme() {
-    this.theme = this.theme === 'light' ? 'dark' : 'light';
-    this.notify();
-  }
-}
-
-/**
- * UI Renderer & Event Controller
- */
 document.addEventListener('DOMContentLoaded', () => {
-  const state = new AppState();
+  const initialShapes = [
+    { name: 'Circle', class: 'circle', desc: 'A continuous curved line.' },
+    { name: 'Square', class: 'square', desc: '4 equal sides.' },
+    { name: 'Triangle', class: 'triangle', desc: '3 sides, strong base.' },
+    { name: 'Diamond', class: 'diamond', desc: 'A rhombus geometry.' },
+    { name: 'Pentagon', class: 'pentagon', desc: '5 distinct sides.' },
+    { name: 'Hexagon', class: 'hexagon', desc: '6 sides.' },
+    { name: 'Heptagon', class: 'heptagon', desc: '7 sides.' },
+    { name: 'Octagon', class: 'octagon', desc: '8 sides.' },
+    { name: 'Nonagon', class: 'nonagon', desc: '9 sides.' },
+    { name: 'Decagon', class: 'decagon', desc: '10 sides.' },
+    { name: 'Star', class: 'star', desc: '5-pointed polygon.' },
+    { name: 'Cross', class: 'cross', desc: 'Orthogonal layout.' },
+    { name: 'Chevron', class: 'chevron', desc: 'Directional chevron.' }
+  ];
 
-  // DOM Elements
-  const inputEl = document.querySelector('#item-input');
-  const addBtn = document.querySelector('#add-btn');
-  const listEl = document.querySelector('#item-list');
-  const themeToggleBtn = document.querySelector('#theme-toggle');
-  const toastContainer = document.querySelector('#toast-container') || createToastContainer();
+  let selectedCard = null;
 
-  // Initial Theme Setup
-  document.documentElement.setAttribute('data-theme', state.theme);
+  // 1. Render Header & Shortcut Legend Bar
+  const header = document.createElement('header');
+  header.className = 'hero-text';
+  header.innerHTML = `
+    <h1>Shape Explorer App</h1>
+    <p>Click any shape to select it, then use the keyboard shortcuts below:</p>
+  `;
 
-  // Render Loop
-  state.subscribe((data) => {
-    // Sync Theme
-    document.documentElement.setAttribute('data-theme', data.theme);
+  const shortcutBar = document.createElement('div');
+  shortcutBar.className = 'shortcut-bar';
+  shortcutBar.innerHTML = `
+    <div class="key-badge"><kbd>D</kbd> Download App (Nothing Selected)</div>
+    <div class="key-badge"><kbd>D</kbd> Duplicate Selected Shape</div>
+    <div class="key-badge"><kbd>B</kbd> Toggle Bright Colors</div>
+    <div class="key-badge"><kbd>R</kbd> Reset App</div>
+  `;
 
-    // Sync Item List
-    if (listEl) {
-      listEl.innerHTML = '';
-      data.items.forEach((item) => {
-        const li = document.createElement('li');
-        li.className = `item-row ${item.completed ? 'completed' : ''}`;
-        li.innerHTML = `
-          <span>${escapeHTML(item.text)}</span>
-          <div>
-            <button class="btn-icon toggle-btn" data-id="${item.id}">✓</button>
-            <button class="btn-icon delete-btn" data-id="${item.id}">✕</button>
-          </div>
-        `;
-        listEl.appendChild(li);
-      });
+  const grid = document.createElement('main');
+  grid.className = 'shape-grid';
+
+  // 2. Card Creation & Selection Handler
+  function createCard(shapeData) {
+    const card = document.createElement('div');
+    card.className = 'shape-card';
+    card.dataset.name = shapeData.name;
+    card.dataset.class = shapeData.class;
+    card.dataset.desc = shapeData.desc;
+
+    card.innerHTML = `
+      <div class="shape ${shapeData.class}"></div>
+      <div class="shape-label">${shapeData.name}</div>
+      <div class="shape-desc">${shapeData.desc}</div>
+    `;
+
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selectedCard) selectedCard.classList.remove('selected');
+
+      if (selectedCard === card) {
+        selectedCard = null; // Deselect on second click
+      } else {
+        selectedCard = card;
+        selectedCard.classList.add('selected');
+      }
+    });
+
+    return card;
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    initialShapes.forEach(shape => grid.appendChild(createCard(shape)));
+  }
+
+  // Deselect when clicking empty space
+  document.addEventListener('click', () => {
+    if (selectedCard) {
+      selectedCard.classList.remove('selected');
+      selectedCard = null;
     }
   });
 
-  // Event Listeners
-  if (addBtn && inputEl) {
-    const handleAdd = () => {
-      if (state.addItem(inputEl.value)) {
-        showToast('Item added successfully');
-        inputEl.value = '';
-        inputEl.focus();
-      }
+  // 3. Actions (Download, Duplicate, Reset, Bright Colors)
+  function downloadApp() {
+    const htmlContent = document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'ShapeExplorerApp.html';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  function duplicateSelected() {
+    if (!selectedCard) return;
+    const shapeData = {
+      name: `${selectedCard.dataset.name} (Copy)`,
+      class: selectedCard.dataset.class,
+      desc: selectedCard.dataset.desc
     };
+    const newCard = createCard(shapeData);
+    selectedCard.insertAdjacentElement('afterend', newCard);
 
-    addBtn.addEventListener('click', handleAdd);
-    inputEl.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleAdd();
-    });
+    // Shift selection to the duplicated card
+    selectedCard.classList.remove('selected');
+    selectedCard = newCard;
+    selectedCard.classList.add('selected');
   }
 
-  if (listEl) {
-    listEl.addEventListener('click', (e) => {
-      const target = e.target;
-      const id = Number(target.dataset.id);
+  function resetApp() {
+    document.body.classList.remove('bright-mode');
+    selectedCard = null;
+    renderGrid();
+  }
 
-      if (target.classList.contains('toggle-btn')) {
-        state.toggleItem(id);
-      } else if (target.classList.contains('delete-btn')) {
-        state.removeItem(id);
-        showToast('Item removed', 'danger');
+  function toggleBrightColors() {
+    document.body.classList.toggle('bright-mode');
+  }
+
+  // 4. Keyboard Shortcuts Listener
+  document.addEventListener('keydown', (e) => {
+    // Ignore input fields if present
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+    const key = e.key.toLowerCase();
+
+    if (key === 'd') {
+      e.preventDefault();
+      if (selectedCard) {
+        duplicateSelected();
+      } else {
+        downloadApp();
       }
-    });
-  }
+    } else if (key === 'r') {
+      e.preventDefault();
+      resetApp();
+    } else if (key === 'b') {
+      e.preventDefault();
+      toggleBrightColors();
+    }
+  });
 
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
-      state.toggleTheme();
-    });
-  }
-
-  // Toast System Utility
-  function showToast(message, type = 'brand') {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-
-    toastContainer.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100%)';
-      toast.style.transition = 'all 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
-    }, 2500);
-  }
-
-  function createToastContainer() {
-    const container = document.createElement('div');
-    container.id = 'toast-container';
-    container.className = 'toast-container';
-    document.body.appendChild(container);
-    return container;
-  }
-
-  function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, 
-      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
-    );
-  }
-
-  // Initial Paint
-  state.notify();
+  // Initialize
+  document.body.appendChild(header);
+  document.body.appendChild(shortcutBar);
+  document.body.appendChild(grid);
+  renderGrid();
 });
