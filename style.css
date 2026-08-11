@@ -1,147 +1,147 @@
-/* Base Theme & Layout */
-:root {
-  --bg-primary: #0f172a;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --accent: #3b82f6;
-  --accent-hover: #60a5fa;
-  --card-bg: #1e293b;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  const initialShapes = [
+    { name: 'Circle', class: 'circle', desc: 'A continuous curved line.' },
+    { name: 'Square', class: 'square', desc: '4 equal sides.' },
+    { name: 'Triangle', class: 'triangle', desc: '3 sides, strong base.' },
+    { name: 'Diamond', class: 'diamond', desc: 'A rhombus geometry.' },
+    { name: 'Pentagon', class: 'pentagon', desc: '5 distinct sides.' },
+    { name: 'Hexagon', class: 'hexagon', desc: '6 sides.' },
+    { name: 'Heptagon', class: 'heptagon', desc: '7 sides.' },
+    { name: 'Octagon', class: 'octagon', desc: '8 sides.' },
+    { name: 'Nonagon', class: 'nonagon', desc: '9 sides.' },
+    { name: 'Decagon', class: 'decagon', desc: '10 sides.' },
+    { name: 'Star', class: 'star', desc: '5-pointed polygon.' },
+    { name: 'Cross', class: 'cross', desc: 'Orthogonal layout.' },
+    { name: 'Chevron', class: 'chevron', desc: 'Directional chevron.' }
+  ];
 
-/* Bright Color Mode Palette */
-body.bright-mode {
-  --bg-primary: #0f051d;
-  --text-main: #ffffff;
-  --text-muted: #f472b6;
-  --accent: #ff007f;
-  --accent-hover: #ff55b1;
-  --card-bg: #1c0936;
-}
+  let selectedCard = null;
 
-body.bright-mode .shape {
-  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #ff007f 100%);
-  box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
-}
+  // 1. Render Header & Shortcut Legend Bar
+  const header = document.createElement('header');
+  header.className = 'hero-text';
+  header.innerHTML = `
+    <h1>Shape Explorer App</h1>
+    <p>Click any shape to select it, then use the keyboard shortcuts below:</p>
+  `;
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+  const shortcutBar = document.createElement('div');
+  shortcutBar.className = 'shortcut-bar';
+  shortcutBar.innerHTML = `
+    <div class="key-badge"><kbd>D</kbd> Download App (Nothing Selected)</div>
+    <div class="key-badge"><kbd>D</kbd> Duplicate Selected Shape</div>
+    <div class="key-badge"><kbd>B</kbd> Toggle Bright Colors</div>
+    <div class="key-badge"><kbd>R</kbd> Reset App</div>
+  `;
 
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-main);
-  padding: 2rem;
-  line-height: 1.6;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
+  const grid = document.createElement('main');
+  grid.className = 'shape-grid';
 
-/* Shortcuts Bar */
-.shortcut-bar {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-}
+  // 2. Card Creation & Selection Handler
+  function createCard(shapeData) {
+    const card = document.createElement('div');
+    card.className = 'shape-card';
+    card.dataset.name = shapeData.name;
+    card.dataset.class = shapeData.class;
+    card.dataset.desc = shapeData.desc;
 
-.key-badge {
-  background: var(--card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
+    card.innerHTML = `
+      <div class="shape ${shapeData.class}"></div>
+      <div class="shape-label">${shapeData.name}</div>
+      <div class="shape-desc">${shapeData.desc}</div>
+    `;
 
-.key-badge kbd {
-  background: var(--accent);
-  color: #fff;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-weight: bold;
-}
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selectedCard) selectedCard.classList.remove('selected');
 
-/* Text Header */
-.hero-text {
-  text-align: center;
-  max-width: 800px;
-  margin: 0 auto 2rem auto;
-}
+      if (selectedCard === card) {
+        selectedCard = null; // Deselect on second click
+      } else {
+        selectedCard = card;
+        selectedCard.classList.add('selected');
+      }
+    });
 
-.hero-text h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+    return card;
+  }
 
-/* Shape Grid & Selection */
-.shape-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+  function renderGrid() {
+    grid.innerHTML = '';
+    initialShapes.forEach(shape => grid.appendChild(createCard(shape)));
+  }
 
-.shape-card {
-  background: var(--card-bg);
-  padding: 2rem 1rem;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-  cursor: pointer;
-  border: 2px solid transparent;
-}
+  // Deselect when clicking empty space
+  document.addEventListener('click', () => {
+    if (selectedCard) {
+      selectedCard.classList.remove('selected');
+      selectedCard = null;
+    }
+  });
 
-.shape-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent-hover);
-}
+  // 3. Actions (Download, Duplicate, Reset, Bright Colors)
+  function downloadApp() {
+    const htmlContent = document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'ShapeExplorerApp.html';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
 
-/* Selected Card Highlight */
-.shape-card.selected {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-  transform: scale(1.03);
-}
+  function duplicateSelected() {
+    if (!selectedCard) return;
+    const shapeData = {
+      name: `${selectedCard.dataset.name} (Copy)`,
+      class: selectedCard.dataset.class,
+      desc: selectedCard.dataset.desc
+    };
+    const newCard = createCard(shapeData);
+    selectedCard.insertAdjacentElement('afterend', newCard);
 
-.shape-label {
-  margin-top: 1.5rem;
-  font-weight: 600;
-}
+    // Shift selection to the duplicated card
+    selectedCard.classList.remove('selected');
+    selectedCard = newCard;
+    selectedCard.classList.add('selected');
+  }
 
-.shape-desc {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
+  function resetApp() {
+    document.body.classList.remove('bright-mode');
+    selectedCard = null;
+    renderGrid();
+  }
 
-/* Geometry CSS */
-.shape {
-  width: 80px;
-  height: 80px;
-  background: var(--accent);
-  transition: transform 0.3s ease, background 0.3s ease;
-}
+  function toggleBrightColors() {
+    document.body.classList.toggle('bright-mode');
+  }
 
-.circle { border-radius: 50%; }
-.square { border-radius: 8px; }
-.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-.diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
-.pentagon { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
-.hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
-.heptagon { clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%); }
-.octagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); }
-.nonagon { clip-path: polygon(50% 0%, 83% 12%, 100% 43%, 94% 78%, 68% 100%, 32% 100%, 6% 78%, 0% 43%, 17% 12%); }
-.decagon { clip-path: polygon(50% 0%, 80.9% 9.5%, 100% 34.5%, 100% 65.5%, 80.9% 90.5%, 50% 100%, 19.1% 90.5%, 0% 65.5%, 0% 34.5%, 19.1% 9.5%); }
-.star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
-.cross { clip-path: polygon(33% 0, 66% 0, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0 66%, 0 33%, 33% 33%); }
-.chevron { clip-path: polygon(100% 50%, 50% 100%, 25% 100%, 75% 50%, 25% 0%, 50% 0%); }
+  // 4. Keyboard Shortcuts Listener
+  document.addEventListener('keydown', (e) => {
+    // Ignore input fields if present
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+    const key = e.key.toLowerCase();
+
+    if (key === 'd') {
+      e.preventDefault();
+      if (selectedCard) {
+        duplicateSelected();
+      } else {
+        downloadApp();
+      }
+    } else if (key === 'r') {
+      e.preventDefault();
+      resetApp();
+    } else if (key === 'b') {
+      e.preventDefault();
+      toggleBrightColors();
+    }
+  });
+
+  // Initialize
+  document.body.appendChild(header);
+  document.body.appendChild(shortcutBar);
+  document.body.appendChild(grid);
+  renderGrid();
+});
