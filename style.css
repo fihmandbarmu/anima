@@ -1,28 +1,4 @@
-/* Base Theme & Layout */
-:root {
-  --bg-primary: #0f172a;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --accent: #3b82f6;
-  --accent-hover: #60a5fa;
-  --card-bg: #1e293b;
-}
-
-/* Bright Color Mode Palette */
-body.bright-mode {
-  --bg-primary: #0f051d;
-  --text-main: #ffffff;
-  --text-muted: #f472b6;
-  --accent: #ff007f;
-  --accent-hover: #ff55b1;
-  --card-bg: #1c0936;
-}
-
-body.bright-mode .shape {
-  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #ff007f 100%);
-  box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
-}
-
+/* Base Resets & Layout */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -30,118 +6,39 @@ body.bright-mode .shape {
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-main);
-  padding: 2rem;
-  line-height: 1.6;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Shortcuts Bar */
-.shortcut-bar {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  background-color: #f4f4f9;
+  color: #333;
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
-}
-
-.key-badge {
-  background: var(--card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.key-badge kbd {
-  background: var(--accent);
-  color: #fff;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-weight: bold;
-}
-
-/* Text Header */
-.hero-text {
-  text-align: center;
-  max-width: 800px;
-  margin: 0 auto 2rem auto;
-}
-
-.hero-text h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Shape Grid & Selection */
-.shape-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.shape-card {
-  background: var(--card-bg);
-  padding: 2rem 1rem;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
   align-items: center;
+  min-height: 100vh;
+}
+
+/* App Container */
+.app-container {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
   text-align: center;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* UI Elements */
+.btn {
+  background-color: #0066ff;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
   cursor: pointer;
-  border: 2px solid transparent;
+  transition: background-color 0.2s ease;
 }
 
-.shape-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent-hover);
+.btn:hover {
+  background-color: #0052cc;
 }
-
-/* Selected Card Highlight */
-.shape-card.selected {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-  transform: scale(1.03);
-}
-
-.shape-label {
-  margin-top: 1.5rem;
-  font-weight: 600;
-}
-
-.shape-desc {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-/* Geometry CSS */
-.shape {
-  width: 80px;
-  height: 80px;
-  background: var(--accent);
-  transition: transform 0.3s ease, background 0.3s ease;
-}
-
-.circle { border-radius: 50%; }
-.square { border-radius: 8px; }
-.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-.diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
-.pentagon { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
-.hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
-.heptagon { clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%); }
-.octagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); }
-.nonagon { clip-path: polygon(50% 0%, 83% 12%, 100% 43%, 94% 78%, 68% 100%, 32% 100%, 6% 78%, 0% 43%, 17% 12%); }
-.decagon { clip-path: polygon(50% 0%, 80.9% 9.5%, 100% 34.5%, 100% 65.5%, 80.9% 90.5%, 50% 100%, 19.1% 90.5%, 0% 65.5%, 0% 34.5%, 19.1% 9.5%); }
-.star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
-.cross { clip-path: polygon(33% 0, 66% 0, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0 66%, 0 33%, 33% 33%); }
-.chevron { clip-path: polygon(100% 50%, 50% 100%, 25% 100%, 75% 50%, 25% 0%, 50% 0%); }
