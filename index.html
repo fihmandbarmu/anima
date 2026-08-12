@@ -1,5 +1,161 @@
-<!-- Inside <head> -->
-<link rel="stylesheet" href="styles.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Voice & Vector Animation Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<!-- Before closing </body> (or in <head> with defer) -->
-<script src="script.js" defer></script>
+  <div class="toolbar">
+    <!-- Tools & Modes -->
+    <div class="tool-group">
+      <label>Mode</label>
+      <button id="btnBrush" class="active">🖌️ Brush</button>
+      <button id="btnSelect">✋ Move/Select</button>
+      <button id="btnDeleteObj" class="danger-btn">🗑 Delete</button>
+    </div>
+
+    <!-- Shapes & 80+ Emoji Stickers -->
+    <div class="tool-group">
+      <label>Shapes & 80+ Stickers</label>
+      <button id="btnAddRect">Rect</button>
+      <button id="btnAddCircle">Circle</button>
+      <button id="btnAddStar">Star</button>
+      <select id="emojiPicker">
+        <optgroup label="🚀 Space & Sci-Fi">
+          <option value="🚀">🚀 Rocket</option><option value="🛸">🛸 UFO</option><option value="👾">👾 Alien</option>
+          <option value="🤖">🤖 Robot</option><option value="🪐">🪐 Planet</option><option value="🛰️">🛰️ Satellite</option>
+          <option value="🌌">🌌 Galaxy</option><option value="💻">💻 Tech</option><option value="⚡">⚡ Laser</option>
+        </optgroup>
+        <optgroup label="🐱 Animals & Monsters">
+          <option value="🐱">🐱 Cat</option><option value="🐶">🐶 Dog</option><option value="🦊">🦊 Fox</option>
+          <option value="🦁">🦁 Lion</option><option value="🐯">🐯 Tiger</option><option value="🐼">🐼 Panda</option>
+          <option value="🦄">🦄 Unicorn</option><option value="🐉">🐉 Dragon</option><option value="🐸">🐸 Frog</option>
+          <option value="🐵">🐵 Monkey</option><option value="🦉">🦉 Owl</option><option value="🦅">🦅 Eagle</option>
+          <option value="🦈">🦈 Shark</option><option value="🐙">🐙 Octopus</option><option value="🦋">🦋 Butterfly</option>
+          <option value="👻">👻 Ghost</option><option value="🧙‍♂️">🧙‍♂️ Wizard</option><option value="🔮">🔮 Crystal</option>
+        </optgroup>
+        <optgroup label="🔥 Elements & Weather">
+          <option value="🔥">🔥 Fire</option><option value="🌈">🌈 Rainbow</option><option value="❄️">❄️ Snow</option>
+          <option value="☀️">☀️ Sun</option><option value="🌙">🌙 Moon</option><option value="🌧️">🌧️ Rain</option>
+          <option value="🌊">🌊 Wave</option><option value="🌋">🌋 Volcano</option><option value="💥">💥 Boom</option>
+        </optgroup>
+        <optgroup label="🍕 Food & Drinks">
+          <option value="🍕">🍕 Pizza</option><option value="🍔">🍔 Burger</option><option value="🍟">🍟 Fries</option>
+          <option value="🍦">🍦 Ice Cream</option><option value="🍿">🍿 Popcorn</option><option value="🍩">🍩 Donut</option>
+          <option value="🍎">🍎 Apple</option><option value="🍓">🍓 Strawberry</option><option value="☕">☕ Coffee</option>
+          <option value="🧋">🧋 Boba</option>
+        </optgroup>
+        <optgroup label="⚽ Sports & Fun">
+          <option value="⚽">⚽ Soccer</option><option value="🏀">🏀 Basketball</option><option value="🎯">🎯 Target</option>
+          <option value="🎨">🎨 Art</option><option value="🎸">🎸 Guitar</option><option value="🎮">🎮 Game</option>
+          <option value="🏆">🏆 Trophy</option><option value="🛹">🛹 Skateboard</option><option value="💣">💣 Bomb</option>
+        </optgroup>
+        <optgroup label="🚗 Vehicles">
+          <option value="🚗">🚗 Car</option><option value="🏎️">🏎️ Racecar</option><option value="✈️">✈️ Airplane</option>
+          <option value="🚁">🚁 Helicopter</option><option value="⛵">⛵ Boat</option><option value="🚲">🚲 Bike</option>
+        </optgroup>
+        <optgroup label="💖 Icons & Symbols">
+          <option value="💖">💖 Heart</option><option value="⭐">⭐ Star</option><option value="💎">💎 Diamond</option>
+          <option value="🎉">🎉 Party</option><option value="👑">👑 Crown</option><option value="🎁">🎁 Gift</option>
+          <option value="🔑">🔑 Key</option><option value="💡">💡 Idea</option><option value="🍀">🍀 Luck</option>
+          <option value="🛡️">🛡️ Shield</option><option value="⚔️">⚔️ Swords</option><option value="⚓">⚓ Anchor</option>
+        </optgroup>
+      </select>
+      <button id="btnAddEmoji">+ Sticker</button>
+    </div>
+
+    <!-- AI Background Templates -->
+    <div class="tool-group">
+      <label>AI Background</label>
+      <select id="bgPreset">
+        <option value="none">Blank Canvas</option>
+        <option value="space">🌌 AI Space</option>
+        <option value="sunset">🌅 AI Sunset</option>
+        <option value="ocean">🌊 AI Ocean</option>
+        <option value="cyber">🌆 Cyberpunk Grid</option>
+        <option value="forest">🌲 AI Forest</option>
+        <option value="desert">🏜️ AI Desert</option>
+        <option value="night">🌙 Night Sky</option>
+      </select>
+    </div>
+
+    <!-- Formatting & Controls -->
+    <div class="tool-group">
+      <label>Color</label>
+      <input type="color" id="colorPicker" value="#000000">
+    </div>
+
+    <div class="tool-group">
+      <label>Size (<span id="sizeVal">8</span>px)</label>
+      <input type="range" id="sizeRange" min="2" max="150" value="8">
+    </div>
+
+    <div class="tool-group">
+      <button id="btnOnion" class="active">Onion Skin</button>
+      <button id="btnClear">Clear Frame</button>
+    </div>
+
+    <!-- 195M+ Generator -->
+    <div class="tool-group ai-group">
+      <label style="color:#c7d2fe;">✨ 195M Engine</label>
+      <input type="text" id="aiSeed" value="100" style="width:30px;">
+      <button id="btnAiGenerate" class="ai-btn">Gen</button>
+    </div>
+  </div>
+
+  <div class="main-stage">
+    <!-- Canvas Area -->
+    <div class="workspace">
+      <div class="canvas-container">
+        <canvas id="bgCanvas" width="640" height="400"></canvas>
+        <canvas id="onionCanvas" width="640" height="400"></canvas>
+        <canvas id="drawCanvas" width="640" height="400"></canvas>
+      </div>
+    </div>
+
+    <!-- AI Assistant Panel (Adds objects & backgrounds via Chat) -->
+    <div class="ai-chat-panel">
+      <div class="chat-header">
+        <span>🤖 AI Assistant (Backgrounds & Objects)</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg bot">Hi! I am your AI animation assistant. Ask me to set backgrounds or add stickers & objects! (e.g. "Set background to space", "Add a dragon sticker", "Add a red star")</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Command AI assistant...">
+        <button id="btnSendChat" class="ai-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline-bar">
+    <div class="playback-controls">
+      <button id="btnPlay" style="background:#10b981; font-weight:bold;">▶ Play</button>
+      <button id="btnAddFrame">+ Frame</button>
+      <button id="btnDupFrame" style="background:#3b82f6;">📋 Duplicate</button>
+      <button id="btnDeleteFrame">🗑 Delete Frame</button>
+
+      <!-- Voice Sync Recorder -->
+      <div class="tool-group" style="margin-left: 8px;">
+        <label>Voice Audio</label>
+        <button id="btnRecordVoice">🎙️ Record Voice</button>
+        <button id="btnPlayVoice" style="display:none;">🔊 Play Voice</button>
+      </div>
+
+      <div class="tool-group">
+        <label>Speed (<span id="fpsVal">12</span> FPS)</label>
+        <input type="range" id="fpsRange" min="1" max="60" value="12">
+      </div>
+
+      <span id="frameCounter" style="font-size: 11px; color: #a0a0b0; font-weight:bold; margin-left:auto;">Frame 1 / 1</span>
+    </div>
+
+    <div class="frames-strip" id="framesStrip"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
