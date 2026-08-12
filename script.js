@@ -70,28 +70,89 @@ function init() {
   drawCanvas.addEventListener('mousedown', handleMouseDown);
   drawCanvas.addEventListener('mousemove', handleMouseMove);
   drawCanvas.addEventListener('mouseup', handleMouseUp);
-  drawCanvas.addEventListener('mouseout', handleMouseUp);
 
   drawCanvas.addEventListener('touchstart', (e) => handleMouseDown(e.touches[0]));
   drawCanvas.addEventListener('touchmove', (e) => handleMouseMove(e.touches[0]));
   drawCanvas.addEventListener('touchend', handleMouseUp);
-  
-  bindEvents();
+
+  // Controls Event Listeners
+  btnBrush.onclick = () => setMode('brush');
+  btnSelect.onclick = () => setMode('select');
+  btnDeleteObj.onclick = deleteSelectedObject;
+  btnAddRect.onclick = () => addObject('rect');
+  btnAddCircle.onclick = () => addObject('circle');
+  btnAddStar.onclick = () => addObject('star');
+  btnAddEmoji.onclick = () => addObject('emoji', emojiPicker.value);
+
+  bgPreset.onchange = (e) => {
+    backgroundTheme = e.target.value;
+    render();
+  };
+
+  colorPicker.oninput = () => {
+    if (selectedObjectIndex !== -1 && mode === 'select') {
+      frames[currentFrame][selectedObjectIndex].color = colorPicker.value;
+      render();
+    }
+  };
+
+  sizeRange.oninput = () => {
+    sizeVal.textContent = sizeRange.value;
+    if (selectedObjectIndex !== -1 && mode === 'select') {
+      frames[currentFrame][selectedObjectIndex].size = parseInt(sizeRange.value);
+      render();
+    }
+  };
+
+  btnOnion.onclick = () => {
+    onionSkinEnabled = !onionSkinEnabled;
+    btnOnion.classList.toggle('active', onionSkinEnabled);
+    render();
+  };
+
+  btnClear.onclick = () => {
+    frames[currentFrame] = [];
+    selectedObjectIndex = -1;
+    render();
+  };
+
+  btnAiGenerate.onclick = () => generate195MAiAnimation(aiSeed.value);
+  btnSendChat.onclick = () => {
+    if (chatInput.value.trim()) {
+      processAiChatMessage(chatInput.value.trim());
+      chatInput.value = '';
+    }
+  };
+  chatInput.onkeydown = (e) => {
+    if (e.key === 'Enter') btnSendChat.click();
+  };
+
+  btnPlay.onclick = togglePlay;
+  btnAddFrame.onclick = () => addFrame(false);
+  btnDupFrame.onclick = () => addFrame(true);
+  btnDeleteFrame.onclick = deleteFrame;
+
+  fpsRange.oninput = () => {
+    fps = parseInt(fpsRange.value);
+    fpsVal.textContent = fps;
+    if (isPlaying) {
+      togglePlay();
+      togglePlay();
+    }
+  };
 }
 
 function render() {
   renderBackground();
   drawCtx.clearRect(0, 0, width, height);
-  
-  if(frames[currentFrame]) {
-      const objects = frames[currentFrame];
-      objects.forEach((obj, idx) => {
-        drawObject(drawCtx, obj);
-        if (idx === selectedObjectIndex && !isPlaying) {
-          drawBoundingBox(drawCtx, obj);
-        }
-      });
-  }
+  const objects = frames[currentFrame];
+
+  objects.forEach((obj, idx) => {
+    drawObject(drawCtx, obj);
+    if (idx === selectedObjectIndex && !isPlaying) {
+      drawBoundingBox(drawCtx, obj);
+    }
+  });
 
   if (currentPath) {
     drawObject(drawCtx, currentPath);
@@ -350,14 +411,13 @@ function setMode(newMode) {
   render();
 }
 
-// AI Chat Assistant Engine (Handles backgrounds & object additions)
+// AI Chat Assistant Engine
 function processAiChatMessage(text) {
   const lower = text.toLowerCase();
   addChatMessage('user', text);
 
   let response = "";
 
-  // Background commands
   if (lower.includes('background') || lower.includes('bg') || lower.includes('theme')) {
     if (lower.includes('space') || lower.includes('galaxy')) {
       backgroundTheme = 'space'; response = "🌌 Background set to Space!";
@@ -379,9 +439,7 @@ function processAiChatMessage(text) {
       backgroundTheme = 'space'; response = "Background updated!";
     }
     bgPreset.value = backgroundTheme;
-  }
-  // Sticker / Object Commands
-  else {
+  } else {
     let addedObj = false;
     const stickerOptions = Array.from(emojiPicker.options);
 
@@ -404,7 +462,6 @@ function processAiChatMessage(text) {
       } else if (lower.includes('star')) {
         addObject('star'); response = "Added Star shape!";
       } else {
-        // Default intelligent fallback
         response = "I can add backgrounds (Space, Sunset, Ocean, Cyber, Forest, Desert, Night) or 80+ stickers (Rocket, Dragon, Cat, Fire, Robot, Pizza). Try 'Add a rocket sticker' or 'Set background to sunset'!";
       }
     }
@@ -440,16 +497,16 @@ btnRecordVoice.onclick = async () => {
 
       mediaRecorder.start();
       isRecording = true;
+      btnRecordVoice.textContent = "⏹️ Stop Recording";
       btnRecordVoice.classList.add('recording');
-      btnRecordVoice.innerHTML = '⏹ Stop Recording';
     } catch (err) {
-      alert("Microphone access denied or unavailable.");
+      alert("Microphone access is required to record voice.");
     }
   } else {
     mediaRecorder.stop();
     isRecording = false;
+    btnRecordVoice.textContent = "🎙️ Record Voice";
     btnRecordVoice.classList.remove('recording');
-    btnRecordVoice.innerHTML = '🎙️ Record Voice';
   }
 };
 
@@ -460,160 +517,123 @@ btnPlayVoice.onclick = () => {
   }
 };
 
-// Procedural AI Animation Generation
+// Frame & Playback Controls
+function addFrame(duplicate = false) {
+  let newFrameObjects = [];
+  if (duplicate) {
+    newFrameObjects = JSON.parse(JSON.stringify(frames[currentFrame]));
+  }
+  currentFrame++;
+  frames.splice(currentFrame, 0, newFrameObjects);
+  selectedObjectIndex = -1;
+  render();
+  updateUI();
+}
+
+function deleteFrame() {
+  if (frames.length <= 1) {
+    frames[0] = [];
+    selectedObjectIndex = -1;
+    render();
+    return;
+  }
+  frames.splice(currentFrame, 1);
+  if (currentFrame >= frames.length) currentFrame = frames.length - 1;
+  selectedObjectIndex = -1;
+  render();
+  updateUI();
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  if (isPlaying) {
+    btnPlay.textContent = "⏸️ Pause";
+    btnPlay.style.background = "#f59e0b";
+    if (recordedAudioUrl) {
+      audioElement.currentTime = 0;
+      audioElement.play();
+    }
+    playInterval = setInterval(() => {
+      currentFrame = (currentFrame + 1) % frames.length;
+      render();
+      updateUI();
+    }, 1000 / fps);
+  } else {
+    btnPlay.textContent = "▶ Play";
+    btnPlay.style.background = "#10b981";
+    clearInterval(playInterval);
+    render();
+  }
+}
+
+function updateUI() {
+  frameCounter.textContent = `Frame ${currentFrame + 1} / ${frames.length}`;
+  framesStrip.innerHTML = '';
+
+  frames.forEach((_, idx) => {
+    const card = document.createElement('div');
+    card.className = `frame-card ${idx === currentFrame ? 'active' : ''}`;
+    card.textContent = `#${idx + 1}`;
+    card.onclick = () => {
+      if (isPlaying) togglePlay();
+      currentFrame = idx;
+      selectedObjectIndex = -1;
+      render();
+      updateUI();
+    };
+    framesStrip.appendChild(card);
+  });
+}
+
+// 195M Generator
 function generate195MAiAnimation(seedVal) {
-  let seed = parseInt(seedVal) || Math.floor(Math.random() * 10000);
-  
+  if (isPlaying) togglePlay();
+  frames = [];
+  const totalFrames = 16;
+  const emojis = ["🚀", "⭐", "🔥", "🤖", "⚽", "👾", "❤️", "🐱", "🛸", "🦄", "🐉", "🍕"];
+  const shapes = ["rect", "circle", "star", "emoji"];
+  const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+
+  let seed = parseInt(seedVal) || 100;
   function random() {
     let x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
   }
 
-  frames = [];
-  const totalFrames = 24;
-  const objCount = 5 + Math.floor(random() * 8);
+  const objCount = 2 + Math.floor(random() * 4);
+  const archetypes = [];
 
-  const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
-  const emojis = ['🚀', '🪐', '👽', '⭐', '☄️'];
-
-  let archetypes = [];
-  for (let i = 0; i < objCount; i++) {
+  for (let o = 0; o < objCount; o++) {
     archetypes.push({
-      type: random() > 0.4 ? 'emoji' : (random() > 0.5 ? 'circle' : 'star'),
+      type: shapes[Math.floor(random() * shapes.length)],
       emoji: emojis[Math.floor(random() * emojis.length)],
       color: colors[Math.floor(random() * colors.length)],
-      baseSize: 15 + Math.floor(random() * 30),
+      baseSize: 25 + Math.floor(random() * 40),
       startX: 100 + Math.floor(random() * 440),
       startY: 80 + Math.floor(random() * 240),
-      orbitRadius: 30 + Math.floor(random() * 80),
-      orbitSpeed: 0.1 + (random() * 0.2),
-      phaseAngle: random() * Math.PI * 2
+      speedX: (random() - 0.5) * 12,
+      speedY: (random() - 0.5) * 12
     });
   }
 
   for (let f = 0; f < totalFrames; f++) {
-    let frameObjects = [];
-    for (let o = 0; o < objCount; o++) {
-      let arch = archetypes[o];
-      let cx = arch.startX + Math.cos(arch.phaseAngle + f * arch.orbitSpeed) * arch.orbitRadius;
-      let cy = arch.startY + Math.sin(arch.phaseAngle + f * arch.orbitSpeed) * arch.orbitRadius;
-      
-      frameObjects.push({
+    const frameObjs = [];
+    archetypes.forEach(arch => {
+      frameObjs.push({
         type: arch.type,
         value: arch.emoji,
-        x: cx,
-        y: cy,
-        size: arch.baseSize + (Math.sin(f * 0.5) * 5),
-        color: arch.color
+        color: arch.color,
+        size: arch.baseSize,
+        x: Math.max(40, Math.min(600, arch.startX + arch.speedX * f)),
+        y: Math.max(40, Math.min(360, arch.startY + arch.speedY * f))
       });
-    }
-    frames.push(frameObjects);
-  }
-  
-  currentFrame = 0;
-  selectedObjectIndex = -1;
-  backgroundTheme = 'space';
-  bgPreset.value = 'space';
-  updateUI();
-  render();
-}
-
-function togglePlay() {
-  isPlaying = !isPlaying;
-  btnPlay.innerHTML = isPlaying ? '⏸ Pause' : '▶ Play';
-  btnPlay.style.background = isPlaying ? '#f59e0b' : '#10b981';
-
-  if (isPlaying) {
-    if (recordedAudioUrl && btnPlayVoice.style.display !== 'none') {
-       audioElement.currentTime = 0;
-       audioElement.play();
-    }
-    playInterval = setInterval(() => {
-      currentFrame = (currentFrame + 1) % frames.length;
-      render();
-      updateUI(false);
-    }, 1000 / fps);
-  } else {
-    clearInterval(playInterval);
-    audioElement.pause();
-    render();
-    updateUI();
-  }
-}
-
-function addFrame(duplicate = false) {
-  if (duplicate && frames[currentFrame]) {
-    frames.splice(currentFrame + 1, 0, JSON.parse(JSON.stringify(frames[currentFrame])));
-  } else {
-    frames.splice(currentFrame + 1, 0, []);
-  }
-  currentFrame++;
-  selectedObjectIndex = -1;
-  updateUI();
-  render();
-}
-
-function deleteFrame() {
-  if (frames.length > 1) {
-    frames.splice(currentFrame, 1);
-    if (currentFrame >= frames.length) currentFrame = frames.length - 1;
-    selectedObjectIndex = -1;
-    updateUI();
-    render();
-  }
-}
-
-function updateUI(full = true) {
-  if (full) {
-    framesStrip.innerHTML = '';
-    frames.forEach((_, idx) => {
-      const fc = document.createElement('div');
-      fc.className = 'frame-card' + (idx === currentFrame ? ' active' : '');
-      fc.textContent = idx + 1;
-      fc.onclick = () => {
-        currentFrame = idx;
-        selectedObjectIndex = -1;
-        render();
-        updateUI();
-      };
-      framesStrip.appendChild(fc);
     });
-  } else {
-     const cards = framesStrip.querySelectorAll('.frame-card');
-     cards.forEach((c, i) => {
-         c.className = 'frame-card' + (i === currentFrame ? ' active' : '');
-     });
+    frames.push(frameObjs);
   }
-  frameCounter.textContent = `Frame ${currentFrame + 1} / ${frames.length}`;
+
+  currentFrame = 0;
+  render();
+  updateUI();
 }
 
-function bindEvents() {
-  btnBrush.onclick = () => setMode('brush');
-  btnSelect.onclick = () => setMode('select');
-  btnDeleteObj.onclick = deleteSelectedObject;
-  btnAddRect.onclick = () => addObject('rect');
-  btnAddCircle.onclick = () => addObject('circle');
-  btnAddStar.onclick = () => addObject('star');
-  btnAddEmoji.onclick = () => addObject('emoji', emojiPicker.value);
-  bgPreset.onchange = () => { backgroundTheme = bgPreset.value; render(); };
-  sizeRange.oninput = () => { sizeVal.textContent = sizeRange.value; if(selectedObjectIndex !== -1 && mode === 'select') { frames[currentFrame][selectedObjectIndex].size = parseInt(sizeRange.value); render(); } };
-  colorPicker.oninput = () => { if(selectedObjectIndex !== -1 && mode === 'select') { frames[currentFrame][selectedObjectIndex].color = colorPicker.value; render(); } };
-  fpsRange.oninput = () => { fps = parseInt(fpsRange.value); fpsVal.textContent = fps; if(isPlaying){ togglePlay(); togglePlay(); } };
-  btnOnion.onclick = () => { onionSkinEnabled = !onionSkinEnabled; btnOnion.classList.toggle('active', onionSkinEnabled); render(); };
-  btnClear.onclick = () => { frames[currentFrame] = []; selectedObjectIndex = -1; render(); };
-  btnAddFrame.onclick = () => addFrame(false);
-  btnDupFrame.onclick = () => addFrame(true);
-  btnDeleteFrame.onclick = deleteFrame;
-  btnPlay.onclick = togglePlay;
-  btnAiGenerate.onclick = () => generate195MAiAnimation(aiSeed.value);
-  btnSendChat.onclick = () => {
-     if (chatInput.value.trim() !== '') {
-       processAiChatMessage(chatInput.value.trim());
-       chatInput.value = '';
-     }
-  };
-  chatInput.onkeydown = (e) => { if(e.key === 'Enter') btnSendChat.click(); };
-}
-
-// Start application
-init();
+window.onload = init;
